@@ -48,8 +48,8 @@ fn main() {
             eprintln!("Error: {}", error);
             std::process::exit(1);
         }
-        Ok(success) if success == false => std::process::exit(2),
-        _ => {}
+        Ok(false) => std::process::exit(2),
+        Ok(true) => {}
     }
 }
 
@@ -58,19 +58,18 @@ fn write_counts<W: Write>(
     counts: &BTreeMap<Counter, usize>,
     title: Option<&str>,
 ) -> Result<(), Error> {
+    use std::fmt::Write;
     let mut out_str = String::new();
 
     for count in counts.values() {
-        out_str.push_str(&count.to_string());
-        out_str.push_str("\t");
+        write!(&mut out_str, "{}\t", count)?;
     }
 
     // remove the trailing tab
     out_str.pop();
 
     if let Some(name) = title {
-        out_str.push_str("\t");
-        out_str.push_str(name);
+        write!(&mut out_str, "\t{}", name)?;
     }
 
     out_str.push_str("\n");
@@ -89,16 +88,13 @@ where
     W: Write,
     I: IntoIterator<Item = &'a Counter>,
 {
-    let mut out_str = String::new();
-
     for counter in counters.into_iter() {
-        out_str.push_str(&counter.to_string());
-        out_str.push_str("\t");
+        write!(&mut writer, "{}\t", counter)?;
     }
 
-    out_str.push_str("filename\n");
+    writer.write_all(b"filename\n");
 
-    Ok(writer.write_all(&out_str.as_bytes())?)
+    Ok(())
 }
 
 /// The return type indicates error conditions. In some error cases, it will just
